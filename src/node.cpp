@@ -388,14 +388,7 @@ int main(int argc, char * argv[]) {
                              frame_id);
                }
             } else if (op_result == RESULT_OPERATION_FAIL) {
-                // All the data is invalid, just publish them
-                float angle_min = DEG2RAD(0.0f);
-                float angle_max = DEG2RAD(359.0f);
-
-                publish_scan(scan_pub, nodes, count,
-                             start_scan_time, scan_duration, inverted,
-                             angle_min, angle_max, max_distance,
-                             frame_id);
+              ROS_ERROR("Laser scan failed");
             }
         }
 
