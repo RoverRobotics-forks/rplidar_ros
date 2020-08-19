@@ -1,0 +1,18 @@
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import ThisLaunchFileDir
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+	return LaunchDescription([
+		IncludeLaunchDescription(PythonLaunchDescriptionSource([ThisLaunchFileDir(), '/rplidar_s1.launch.py'])),
+		Node(package='dummy_map_server', executable='dummy_map_server', output='screen'),
+		Node(
+			package='rviz2',
+			executable='rviz2',
+			output='screen',
+			arguments=['-d', [ThisLaunchFileDir(), '/../rviz/rplidar.rviz']],
+		)
+	])
