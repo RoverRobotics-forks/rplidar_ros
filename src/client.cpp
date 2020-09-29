@@ -35,31 +35,44 @@
  */
 
 
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
+#include <memory>
 
-#define ROS_INFO RCUTILS_LOG_INFO
+#include "rclcpp/rclcpp.hpp"
+#include <sensor_msgs/msg/laser_scan.hpp>
+using std::placeholders::_1;
 
 #define M_PI 3.1415926535897932384626433832795
 #define RAD2DEG(x) ((x)*180./M_PI)
 
-void scanCallback(const std::shared_ptr<sensor_msgs::msg::LaserScan> scan)
+class RplidarNodeClient : public rclcpp::Node
 {
-    int count = scan->scan_time / scan->time_increment;
-    ROS_INFO("I heard a laser scan %s[%d]:", scan->header.frame_id.c_str(), count);
-    ROS_INFO("angle_range, %f, %f", RAD2DEG(scan->angle_min), RAD2DEG(scan->angle_max));
-
-    for(int i = 0; i < count; i++) {
-        float degree = RAD2DEG(scan->angle_min + scan->angle_increment * i);
-        ROS_INFO(": [%f, %f]", degree, scan->ranges[i]);
+  public:
+    RplidarNodeClient()
+    : Node("rplidar_node_client")
+    {
+      subscription_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+      "scan/", 10, std::bind(&RplidarNodeClient::scan_callback, this, _1));
     }
-}
 
-int main(int argc, char **argv)
+  private:
+    void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr scan) const
+    {
+      int count = scan->scan_time / scan->time_increment;
+      RCLCPP_INFO(this->get_logger(), "I heard a laser scan %s[%d]:", scan->header.frame_id.c_str(), count);
+      RCLCPP_INFO(this->get_logger(), "angle_range, %f, %f", RAD2DEG(scan->angle_min), RAD2DEG(scan->angle_max));
+
+      for(int i = 0; i < count; i++) {
+          float degree = RAD2DEG(scan->angle_min + scan->angle_increment * i);
+          RCLCPP_INFO(this->get_logger(), ": [%f, %f]", degree, scan->ranges[i]);
+      }
+    }
+    rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_;
+};
+
+int main(int argc, char * argv[])
 {
-    rclcpp::init(argc, argv);
-    auto node = rclcpp::Node::make_shared("rplidar_node_client");
-    auto sub = node->create_subscription<sensor_msgs::msg::LaserScan>("/scan", scanCallback);
-    rclcpp::spin(node);
-    return 0;
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<RplidarNodeClient>());
+  rclcpp::shutdown();
+  return 0;
 }
